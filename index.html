@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Lotería - Asociación</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-full flex flex-col antialiased">
+
+    <!-- Header / Navbar -->
+    <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-700 p-2 rounded-xl text-amber-300">
+                    <i class="fa-solid fa-ticket text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold tracking-tight">Lotería Asociación</h1>
+                    <p class="text-xs text-indigo-200">Panel de Control & Tesorería Avanzado</p>
+                </div>
+            </div>
+
+            <!-- Global Actions -->
+            <div class="flex items-center gap-2">
+                <button onclick="app.exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow transition">
+                    <i class="fa-solid fa-file-excel"></i> <span class="hidden sm:inline">Exportar Excel</span>
+                </button>
+                <button onclick="app.downloadBackup()" class="bg-indigo-700 hover:bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow transition" title="Descargar Copia de Seguridad">
+                    <i class="fa-solid fa-download"></i> <span class="hidden sm:inline">Backup</span>
+                </button>
+                <label class="bg-indigo-700 hover:bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow cursor-pointer transition" title="Restaurar Copia">
+                    <i class="fa-solid fa-upload"></i> <span class="hidden sm:inline">Restaurar</span>
+                    <input type="file" id="restoreFile" accept=".json" class="hidden" onchange="app.restoreBackup(event)">
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-[57px] z-30">
+        <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-3 overflow-x-auto no-scrollbar">
+            <button onclick="app.switchTab('stock')" id="tab-stock" class="tab-btn px-3 py-3 text-xs sm:text-sm font-medium border-b-2 border-indigo-600 text-indigo-600 flex items-center gap-2 whitespace-nowrap transition">
+                <i class="fa-solid fa-boxes-stacked"></i> Stock
+            </button>
+            <button onclick="app.switchTab('base')" id="tab-base" class="tab-btn px-3 py-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2 whitespace-nowrap transition">
+                <i class="fa-solid fa-database"></i> Base de Datos
+            </button>
+            <button onclick="app.switchTab('socios')" id="tab-socios" class="tab-btn px-3 py-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2 whitespace-nowrap transition">
+                <i class="fa-solid fa-users"></i> Fichas de Socios
+            </button>
+            <button onclick="app.switchTab('tesoreria')" id="tab-tesoreria" class="tab-btn px-3 py-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2 whitespace-nowrap transition">
+                <i class="fa-solid fa-wallet"></i> Tesorería
+            </button>
+            <button onclick="app.switchTab('premios')" id="tab-premios" class="tab-btn px-3 py-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2 whitespace-nowrap transition">
+                <i class="fa-solid fa-trophy text-amber-500"></i> Premios y Liquidación
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-5 overflow-y-auto relative">
+
+        <!-- TAB 1: STOCK DE LOTERÍA -->
+        <section id="view-stock" class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Control General de Stock (Navidad y Niño Independientes)</h2>
+                    <p class="text-xs sm:text-sm text-slate-500">Configura la lotería pedida a la administración y revisa la asignación.</p>
+                </div>
+                <button onclick="app.openStockModal()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow transition">
+                    <i class="fa-solid fa-plus"></i> Configurar / Editar Stock Pedido
+                </button>
+            </div>
+
+            <!-- Summary Cards Stock -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Valor Total Lotería</p>
+                            <h3 id="stock-val-total" class="text-2xl font-bold text-slate-900 mt-1">0,00 €</h3>
+                        </div>
+                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><i class="fa-solid fa-euro-sign text-lg"></i></div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-3">Navidad + Niño (Valor nominal + fardas)</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Deuda Admin. Total</p>
+                            <h3 id="stock-val-admin" class="text-2xl font-bold text-amber-600 mt-1">0,00 €</h3>
+                        </div>
+                        <div class="p-3 bg-amber-50 text-amber-600 rounded-xl"><i class="fa-solid fa-building-columns text-lg"></i></div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-3">Importe neto para pagar a la admin.</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Fardas Totales</p>
+                            <h3 id="stock-val-farda" class="text-2xl font-bold text-emerald-600 mt-1">0,00 €</h3>
+                        </div>
+                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><i class="fa-solid fa-piggy-bank text-lg"></i></div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-3">Beneficio farda (Navidad + Niño)</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Deuda Pendiente Socios</p>
+                            <h3 id="stock-farda-pend" class="text-2xl font-bold text-rose-600 mt-1">0,00 €</h3>
+                        </div>
+                        <div class="p-3 bg-rose-50 text-rose-600 rounded-xl"><i class="fa-solid fa-triangle-exclamation text-lg"></i></div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-3">Total pendiente de cobro</p>
+                </div>
+            </div>
+
+            <!-- Detailed Stock Tables -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Sorteo de Navidad -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-900 text-white px-5 py-3.5 flex justify-between items-center">
+                        <h3 class="font-bold flex items-center gap-2"><i class="fa-solid fa-gift text-red-400"></i> Sorteo de Navidad</h3>
+                        <span class="text-xs bg-slate-800 px-2.5 py-1 rounded-full text-slate-300" id="badge-navidad-tot">0 €</span>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <div class="border border-slate-100 rounded-xl p-4 bg-slate-50">
+                            <h4 class="font-semibold text-sm text-slate-700 mb-2 flex items-center justify-between">
+                                <span>Décimos Navidad (23€: 20€ admin + 3€ farda)</span>
+                                <span id="st-nav-dec-tot" class="text-indigo-600 font-bold">0 €</span>
+                            </h4>
+                            <div class="grid grid-cols-3 gap-3 text-xs">
+                                <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-center"><span class="text-slate-400 block mb-1">Pedido</span><span id="st-nav-dec-ped" class="font-bold text-slate-800 text-sm">0</span></div>
+                                <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-center"><span class="text-slate-400 block mb-1">Asignado</span><span id="st-nav-dec-asig" class="font-bold text-indigo-600 text-sm">0</span></div>
+                                <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-center"><span class="text-slate-400 block mb-1">Disponible</span><span id="st-nav-dec-disp" class="font-bold text-emerald-600 text-sm">0</span></div>
+                            </div>
+                        </div>
+                        <div class="border border-slate-100 rounded-xl p-4 bg-slate-50">
+                            <h4 class="font-semibold text-sm text-slate-700 mb-2 flex items-center justify-between">
+                                <span>Papeletas Navidad (5€: 4€ admin + 1€ farda)</span>
+                                <span id="st-nav-pap-tot" class="text-indigo-600 font-bold">0 €</span>
+                            </h4>
+                            <div class="grid grid-cols-3 gap-3 text-xs">
+                                <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-center"><span class="text-slate-400 block mb-1">Pedido</span><span id="st-nav-pap-ped" class="font-bold text-slate-800 text-sm">0</span></div>
+                                <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-center"><span class="text-slate-400 block mb-1">Asignado</span><span id="st-nav-pap-asig" class="font-bold text-indigo-600 text-sm">0</span></div>
+                                <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-center"><span class="text-slate-400 block mb-1">Disponible</span><span id="st-nav-pap-disp" class="font-bold text-emerald-600 text-sm">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sorteo del Niño -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-900 text-white px-5 py-3.5 flex justify-between items-center">
+                        <h3 class="font-bold flex items-center gap-2"><i class="fa-solid fa-child text-amber-400"></i> Sorteo del Niño</h3>
+                        <span class="text-xs bg-slate-800 px-2.5 py-1 rounded-full text-slate-300" id="badge-nino-tot">0 €</span>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <div class="border border-slate-100 rounded-xl p-4 bg-slate-50">
+                            <h4 class="font-semibold text-sm text-slate-700 mb-2 flex items-center justify-between">
+                                <span>Décimos Niño (23€: 20€ admin + 3€ farda)</span>
+                                <span id="st-nin-dec-tot" class="text-indigo-600 font-bold">0 €</span>
+                            </h4>
+                            <div class="grid grid-cols-3 gap-3 text-xs">
+                                <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-center"><span class="text-slate-400 block mb-1">Pedido</span><span id="st-nin-dec-ped" class="font-bold text-slate-800 text-sm">0</span></div>
+                                <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-center"><span class="text-slate-400 block mb-1">Asignado</span><span id="st-nin-dec-asig" class="font-bold text-indigo-600 text-sm">0</span></div>
+                                <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-center"><span class="text-slate-400 block mb-1">Disponible</span><span id="st-nin-dec-disp" class="font-bold text-emerald-600 text-sm">0</span></div>
+                            </div>
+                        </div>
+                        <div class="border border-slate-100 rounded-xl p-4 bg-slate-50">
+                            <h4 class="font-semibold text-sm text-slate-700 mb-2 flex items-center justify-between">
+                                <span>Papeletas Niño (5€: 4€ admin + 1€ farda)</span>
+                                <span id="st-nin-pap-tot" class="text-indigo-600 font-bold">0 €</span>
+                            </h4>
+                            <div class="grid grid-cols-3 gap-3 text-xs">
+                                <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-center"><span class="text-slate-400 block mb-1">Pedido</span><span id="st-nin-pap-ped" class="font-bold text-slate-800 text-sm">0</span></div>
+                                <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-center"><span class="text-slate-400 block mb-1">Asignado</span><span id="st-nin-pap-asig" class="font-bold text-indigo-600 text-sm">0</span></div>
+                                <div class="bg-white p-2.5 rounded-lg border border-slate-200 text-center"><span class="text-slate-400 block mb-1">Disponible</span><span id="st-nin-pap-disp" class="font-bold text-emerald-600 text-sm">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: BASE DE DATOS -->
+        <section id="view-base" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Base de Datos de Socios y Familias</h2>
+                    <p class="text-xs sm:text-sm text-slate-500">Listado general con la información de farda incluida (SI/NO) y tipo si aplica.</p>
+                </div>
+                <button onclick="app.openBaseModal()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow transition">
+                    <i class="fa-solid fa-user-plus"></i> Añadir Registro a BD
+                </button>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div class="relative w-full sm:w-96">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="search-base-input" oninput="app.renderBaseTabla()" placeholder="Buscar en base de datos..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="text-xs text-slate-500 font-medium">
+                    Total registros en BD: <span id="count-base" class="font-bold text-indigo-600">0</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 uppercase tracking-wider text-[11px] border-b border-slate-200">
+                                <th class="p-4">Responsable / Individuo</th>
+                                <th class="p-4">Familia Dependiente</th>
+                                <th class="p-4">Cuota (Farda Incluida)</th>
+                                <th class="p-4">Tipo Farda</th>
+                                <th class="p-4 text-center">Estado Lotería</th>
+                                <th class="p-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="base-table-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: FICHAS DE SOCIOS -->
+        <section id="view-socios" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Gestión de Socios y Pedidos por Sorteo</h2>
+                    <p class="text-xs sm:text-sm text-slate-500">Busca en la base de datos para crear la ficha o edita sus peticiones.</p>
+                </div>
+                <button onclick="app.openSocioModal()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow transition">
+                    <i class="fa-solid fa-user-plus"></i> Nueva Ficha de Pedido
+                </button>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div class="relative w-full sm:w-96">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="search-input" oninput="app.filterSocios()" placeholder="Buscar por nº socio o nombre..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="text-xs text-slate-500 font-medium">
+                    Total fichas creadas: <span id="count-socios" class="font-bold text-indigo-600">0</span>
+                </div>
+            </div>
+
+            <div id="socios-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </section>
+
+        <!-- TAB 4: TESORERÍA Y BALANCE -->
+        <section id="view-tesoreria" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Tesorería y Caja Actual</h2>
+                    <p class="text-xs sm:text-sm text-slate-500">Control de dinero en caja, pagos a administración y balance.</p>
+                </div>
+                <button onclick="app.openLiquidarAdminModal()" class="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow transition">
+                    <i class="fa-solid fa-building-columns"></i> Registrar Pago a Administración
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-bold text-emerald-800 uppercase tracking-wider">Efectivo Total en Caja</p>
+                            <h3 id="caja-actual-val" class="text-3xl font-extrabold text-emerald-700 mt-1">0,00 €</h3>
+                        </div>
+                        <div class="p-3 bg-emerald-200 text-emerald-800 rounded-xl"><i class="fa-solid fa-wallet text-xl"></i></div>
+                    </div>
+                    <p class="text-xs text-emerald-800 mt-3">Total entregado menos pagos realizados</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Recaudado Socios</p>
+                            <h3 id="caja-recaudado-tot" class="text-2xl font-bold text-slate-900 mt-1">0,00 €</h3>
+                        </div>
+                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><i class="fa-solid fa-hand-holding-dollar text-lg"></i></div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-3">Suma de entregas Navidad y Niño</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Pagado Admin.</p>
+                            <h3 id="caja-pagado-admin-tot" class="text-2xl font-bold text-amber-600 mt-1">0,00 €</h3>
+                        </div>
+                        <div class="p-3 bg-amber-50 text-amber-600 rounded-xl"><i class="fa-solid fa-file-invoice-dollar text-lg"></i></div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-3">Suma entregada a la administración</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <h3 class="font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3"><i class="fa-solid fa-gift text-red-500"></i> Navidad - Balance Admin</h3>
+                    <div class="grid grid-cols-3 gap-3 text-xs">
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200"><span class="text-slate-400 block mb-1">Deuda Total</span><span id="tes-nav-total" class="font-bold text-slate-900 text-sm">0,00 €</span></div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200"><span class="text-slate-400 block mb-1">Pagado</span><span id="tes-nav-pagado" class="font-bold text-emerald-600 text-sm">0,00 €</span></div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200"><span class="text-slate-400 block mb-1">Pendiente</span><span id="tes-nav-pendiente" class="font-bold text-amber-600 text-sm">0,00 €</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <h3 class="font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3"><i class="fa-solid fa-child text-amber-500"></i> Niño - Balance Admin</h3>
+                    <div class="grid grid-cols-3 gap-3 text-xs">
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200"><span class="text-slate-400 block mb-1">Deuda Total</span><span id="tes-nin-total" class="font-bold text-slate-900 text-sm">0,00 €</span></div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200"><span class="text-slate-400 block mb-1">Pagado</span><span id="tes-nin-pagado" class="font-bold text-emerald-600 text-sm">0,00 €</span></div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200"><span class="text-slate-400 block mb-1">Pendiente</span><span id="tes-nin-pendiente" class="font-bold text-amber-600 text-sm">0,00 €</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 font-bold text-slate-800 flex items-center justify-between">
+                    <span>Historial de Pagos a la Administración</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 uppercase tracking-wider text-[11px] border-b border-slate-200">
+                                <th class="p-4">Fecha</th><th class="p-4">Sorteo</th><th class="p-4">Concepto</th><th class="p-4 text-right">Importe</th><th class="p-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pagos-admin-table-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: PREMIOS Y LIQUIDACIÓN -->
+        <section id="view-premios" class="hidden space-y-6">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-900">Cálculo de Premios y Devoluciones por Socio</h2>
+                <p class="text-xs sm:text-sm text-slate-500">Introduce el premio por décimo y por papeleta para cada sorteo.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Sorteo Navidad Premios -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                    <h3 class="font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3 text-base">
+                        <i class="fa-solid fa-gift text-red-500"></i> Sorteo de Navidad - Premios
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Premio por Décimo (€)</label>
+                            <input type="number" step="0.01" min="0" id="premio-nav-dec" value="0" oninput="app.renderPremios()" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Premio por Papeleta (€)</label>
+                            <input type="number" step="0.01" min="0" id="premio-nav-pap" value="0" oninput="app.renderPremios()" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sorteo Niño Premios -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                    <h3 class="font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3 text-base">
+                        <i class="fa-solid fa-child text-amber-500"></i> Sorteo del Niño - Premios
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Premio por Décimo (€)</label>
+                            <input type="number" step="0.01" min="0" id="premio-nin-dec" value="0" oninput="app.renderPremios()" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Premio por Papeleta (€)</label>
+                            <input type="number" step="0.01" min="0" id="premio-nin-pap" value="0" oninput="app.renderPremios()" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Liquidación de Premios por Socio -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 font-bold text-slate-800 flex items-center justify-between">
+                    <span>Liquidación y Dinero a Devolver por Socio</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 uppercase tracking-wider text-[11px] border-b border-slate-200">
+                                <th class="p-4">Nº</th>
+                                <th class="p-4">Socio</th>
+                                <th class="p-4 text-right">Premio Navidad</th>
+                                <th class="p-4 text-right">Premio Niño</th>
+                                <th class="p-4 text-right font-bold">Total a Devolver (€)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="premios-table-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FLOATING ACTION BUTTON (FAB) -->
+    <button onclick="app.openSocioModal()" class="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl z-40 transition hover:scale-105 active:scale-95" title="Nueva Ficha">
+        <i class="fa-solid fa-user-plus"></i>
+    </button>
+
+    <!-- MODAL: REGISTRAR PAGO ADMIN -->
+    <div id="modal-liquidar" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-building-columns"></i> Registrar Pago a Administración</h3>
+                <button onclick="app.closeLiquidarAdminModal()" class="text-indigo-200 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="app.saveLiquidarAdmin(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Sorteo</label>
+                    <select id="inp-liquidar-sorteo" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="navidad">Sorteo de Navidad</option>
+                        <option value="nino">Sorteo del Niño</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Importe del Pago (€)</label>
+                    <input type="number" step="0.01" min="0" id="inp-liquidar-monto" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Concepto / Notas (Opcional)</label>
+                    <input type="text" id="inp-liquidar-nota" placeholder="Ej. Liquidación parcial" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="app.closeLiquidarAdminModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow transition">Registrar Pago</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIGURAR STOCK -->
+    <div id="modal-stock" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-boxes-stacked"></i> Configurar Stock Total Pedido</h3>
+                <button onclick="app.closeStockModal()" class="text-indigo-200 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="app.saveStock(event)" class="p-6 space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                        <h4 class="font-bold text-xs uppercase tracking-wider text-indigo-900"><i class="fa-solid fa-gift text-red-500"></i> Navidad</h4>
+                        <div><label class="block text-xs font-medium text-slate-600 mb-1">Décimos</label><input type="number" id="inp-stock-nav-dec" min="0" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold"></div>
+                        <div><label class="block text-xs font-medium text-slate-600 mb-1">Papeletas</label><input type="number" id="inp-stock-nav-pap" min="0" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold"></div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                        <h4 class="font-bold text-xs uppercase tracking-wider text-indigo-900"><i class="fa-solid fa-child text-amber-500"></i> Niño</h4>
+                        <div><label class="block text-xs font-medium text-slate-600 mb-1">Décimos</label><input type="number" id="inp-stock-nin-dec" min="0" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold"></div>
+                        <div><label class="block text-xs font-medium text-slate-600 mb-1">Papeletas</label><input type="number" id="inp-stock-nin-pap" min="0" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold"></div>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="app.closeStockModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow transition">Guardar Stock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: AÑADIR / EDITAR REGISTRO BASE DE DATOS -->
+    <div id="modal-base" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 id="modal-base-title" class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-database"></i> Registro Base de Datos</h3>
+                <button onclick="app.closeBaseModal()" class="text-indigo-200 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="app.saveBaseRegistro(event)" class="p-6 space-y-4">
+                <input type="hidden" id="base-id">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">1. Responsable o Individuo</label>
+                    <input type="text" id="base-responsable" required placeholder="Ej. Juan Pérez García" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">2. Familia dependiente</label>
+                    <input type="text" id="base-familia" required placeholder="Ej. María López y Hijos" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">3. ¿Farda Incluida en Cuota?</label>
+                        <select id="base-cuota-si-no" onchange="app.toggleBaseFardaTipo()" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="SI">SI (Incluida en cuota)</option>
+                            <option value="NO">NO (No incluida)</option>
+                        </select>
+                    </div>
+                    <div id="wrapper-base-farda-tipo">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">4. Tipo de Farda</label>
+                        <select id="base-farda-tipo" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="individual">Individual</option>
+                            <option value="familiar">Familiar</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="app.closeBaseModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow transition">Guardar Registro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVO / EDITAR SOCIO -->
+    <div id="modal-socio" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
+            <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center shrink-0">
+                <h3 id="modal-socio-title" class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-user-pen"></i> Ficha de Pedido de Socio</h3>
+                <button onclick="app.closeSocioModal()" class="text-indigo-200 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="app.saveSocio(event)" class="p-6 space-y-4 overflow-y-auto flex-1">
+                <input type="hidden" id="socio-id">
+                <input type="hidden" id="socio-db-id">
+                
+                <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl space-y-3">
+                    <label class="block text-xs font-bold text-indigo-900 uppercase tracking-wider"><i class="fa-solid fa-magnifying-glass"></i> Buscador en Base de Datos</label>
+                    <div class="relative">
+                        <input type="text" id="socio-buscador-bd" oninput="app.filtrarSugerenciasBD(this.value)" placeholder="Escribe para buscar responsable o familia..." class="w-full px-3 py-2 bg-white border border-indigo-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <div id="sugerencias-bd-box" class="absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Nº de Socio</label>
+                        <input type="text" id="socio-numero" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Nombre (Guardado en Ficha)</label>
+                        <input type="text" id="socio-nombre-ficha" required placeholder="Selecciona de la BD o escribe" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div id="container-socio-farda" class="p-3 bg-slate-50 rounded-xl border border-slate-200 hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1"><i class="fa-solid fa-piggy-bank text-indigo-600"></i> Farda detectada desde BD (No incluida en cuota)</label>
+                    <select id="socio-tipo-farda" onchange="app.calcModalSocioPreview()" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-indigo-900">
+                        <option value="individual">Farda Individual (Nav: 50€ | Niño: 25€)</option>
+                        <option value="familiar">Farda Familiar (Nav: 72€ | Niño: 35€)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                        <h4 class="font-bold text-xs uppercase tracking-wider text-indigo-900"><i class="fa-solid fa-gift text-red-500"></i> Sorteo Navidad</h4>
+                        <div><label class="block text-xs font-medium text-slate-600 mb-1">Décimos (23€)</label><input type="number" id="socio-nav-dec" min="0" value="0" oninput="app.calcModalSocioPreview()" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold"></div>
+                        <div><label class="block text-xs font-medium text-slate-600 mb-1">Papeletas (5€)</label><input type="number" id="socio-nav-pap" min="0" value="0" oninput="app.calcModalSocioPreview()" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold"></div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                        <h4 class="font-bold text-xs uppercase tracking-wider text-indigo-900"><i class="fa-solid fa-child text-amber-500"></i> Sorteo del Niño</h4>
+                        <div><label class="block text-xs font-medium text-slate-600 mb-1">Décimos (23€)</label><input type="number" id="socio-nin-dec" min="0" value="0" oninput="app.calcModalSocioPreview()" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold"></div>
+                        <div><label class="block text-xs font-medium text-slate-600 mb-1">Papeletas (5€)</label><input type="number" id="socio-nin-pap" min="0" value="0" oninput="app.calcModalSocioPreview()" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold"></div>
+                    </div>
+                </div>
+
+                <div class="bg-indigo-50 border border-indigo-100 p-3 rounded-xl text-xs space-y-1 text-indigo-900">
+                    <div class="flex justify-between font-semibold">
+                        <span>Total Navidad: <strong id="modal-socio-total-nav">0,00 €</strong></span>
+                        <span>Total Niño: <strong id="modal-socio-total-nin">0,00 €</strong></span>
+                    </div>
+                    <div class="flex justify-between font-bold pt-1 border-t border-indigo-200">
+                        <span>Total General a Pagar:</span>
+                        <span id="modal-socio-total-pagar" class="text-sm">0,00 €</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-3">
+                        <label class="block text-xs font-bold text-emerald-900 uppercase tracking-wider">Dinero Entregado (€)</label>
+                        <div><label class="block text-[11px] font-medium text-emerald-800 mb-1">Navidad:</label><input type="number" step="0.01" min="0" id="socio-nav-entregado" value="0" oninput="app.calcModalSocioPreview()" class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg text-sm font-semibold text-emerald-900"></div>
+                        <div><label class="block text-[11px] font-medium text-emerald-800 mb-1">Niño:</label><input type="number" step="0.01" min="0" id="socio-nin-entregado" value="0" oninput="app.calcModalSocioPreview()" class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg text-sm font-semibold text-emerald-900"></div>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-2 flex flex-col justify-between">
+                        <div>
+                            <span class="block text-xs font-bold text-amber-900 uppercase tracking-wider">Cambio Total a Devolver</span>
+                            <h3 id="modal-socio-cambio" class="text-2xl font-extrabold text-amber-700 mt-1">0,00 €</h3>
+                        </div>
+                        <p id="modal-socio-cambio-msg" class="text-[11px] text-amber-800">Introduce las entregas</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="app.closeSocioModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow transition">Guardar Ficha</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: MENSAJE CUSTOM -->
+    <div id="modal-msg" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center space-y-4 animate-in fade-in zoom-in duration-200">
+            <div id="modal-msg-icon" class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-xl"><i class="fa-solid fa-info"></i></div>
+            <h3 id="modal-msg-title" class="font-bold text-lg text-slate-900">Aviso</h3>
+            <p id="modal-msg-text" class="text-xs sm:text-sm text-slate-600"></p>
+            <button onclick="app.closeMsgModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-semibold text-sm shadow transition">Entendido</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 text-center py-3 text-xs text-slate-400">
+        Gestión de Lotería Asociación &bull; Autoguardado activo en navegador (localStorage)
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        class LotteryApp {
+            constructor() {
+                this.RULES = {
+                    decVal: 20,
+                    decFarda: 3,
+                    decTotal: 23,
+                    papVal: 4,
+                    papFarda: 1,
+                    papTotal: 5,
+                    fardasCuotas: {
+                        navidad: { individual: 50, familiar: 72, incluida: 0 },
+                        nino: { individual: 25, familiar: 35, incluida: 0 }
+                    }
+                };
+
+                this.loadData();
+                this.initApp();
+            }
+
+            loadData() {
+                const savedStock = localStorage.getItem('lot_stock');
+                const savedBase = localStorage.getItem('lot_base');
+                const savedSocios = localStorage.getItem('lot_socios');
+                const savedPagosAdmin = localStorage.getItem('lot_pagos_admin');
+
+                this.stock = savedStock ? JSON.parse(savedStock) : {
+                    navidad: { decPedidos: 0, papPedidos: 0 },
+                    nino: { decPedidos: 0, papPedidos: 0 }
+                };
+
+                // Base de datos inicial sincronizada con cuota SI/NO y tipo farda opcional
+                this.baseDatos = savedBase ? JSON.parse(savedBase) : [
+                    { id: 'db_1', responsable: 'ADRIAN ALONSO', familia: 'Familia Adrían Alonso', cuotaSiNo: 'SI', fardaTipo: 'incluida' },
+                    { id: 'db_2', responsable: 'ADRIAN GADEA', familia: 'Adrían Gadea', cuotaSiNo: 'SI', fardaTipo: 'incluida' },
+                    { id: 'db_3', responsable: 'ELENA CEREZUELA', familia: 'Elena Cerezuela Barque', cuotaSiNo: 'INDIVIDUAL', fardaTipo: 'individual' },
+                    { id: 'db_4', responsable: 'ALFREDO CABALLERO', familia: 'Alfredo Caballero Boix, Marian Lagostena Molina', cuotaSiNo: 'FAMILIA', fardaTipo: 'familiar' }
+                ];
+
+                this.socios = savedSocios ? JSON.parse(savedSocios) : [];
+                this.pagosAdmin = savedPagosAdmin ? JSON.parse(savedPagosAdmin) : [];
+            }
+
+            saveData() {
+                localStorage.setItem('lot_stock', JSON.stringify(this.stock));
+                localStorage.setItem('lot_base', JSON.stringify(this.baseDatos));
+                localStorage.setItem('lot_socios', JSON.stringify(this.socios));
+                localStorage.setItem('lot_pagos_admin', JSON.stringify(this.pagosAdmin));
+            }
+
+            initApp() {
+                this.renderAll();
+            }
+
+            renderAll() {
+                this.renderStock();
+                this.renderBaseTabla();
+                this.renderSocios();
+                this.renderTesoreria();
+                this.renderPremios();
+            }
+
+            switchTab(tabId) {
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('border-indigo-600', 'text-indigo-600');
+                    btn.classList.add('border-transparent', 'text-slate-500');
+                });
+                const activeBtn = document.getElementById(`tab-${tabId}`);
+                if (activeBtn) {
+                    activeBtn.classList.remove('border-transparent', 'text-slate-500');
+                    activeBtn.classList.add('border-indigo-600', 'text-indigo-600');
+                }
+
+                ['stock', 'base', 'socios', 'tesoreria', 'premios'].forEach(id => {
+                    const view = document.getElementById(`view-${id}`);
+                    if (view) {
+                        if (id === tabId) view.classList.remove('hidden');
+                        else view.classList.add('hidden');
+                    }
+                });
+            }
+
+            showMsg(title, text, type = 'info') {
+                document.getElementById('modal-msg-title').innerText = title;
+                document.getElementById('modal-msg-text').innerText = text;
+                const icon = document.getElementById('modal-msg-icon');
+                if (type === 'success') {
+                    icon.className = 'w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-xl';
+                    icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+                } else if (type === 'error') {
+                    icon.className = 'w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto text-xl';
+                    icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                } else {
+                    icon.className = 'w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-xl';
+                    icon.innerHTML = '<i class="fa-solid fa-info"></i>';
+                }
+                document.getElementById('modal-msg').classList.remove('hidden');
+            }
+
+            closeMsgModal() { document.getElementById('modal-msg').classList.add('hidden'); }
+
+            // --- STOCK ---
+            getAsignedTotals() {
+                let navDecAsig = 0, navPapAsig = 0, ninDecAsig = 0, ninPapAsig = 0;
+                this.socios.forEach(s => {
+                    navDecAsig += Number(s.navDec || 0);
+                    navPapAsig += Number(s.navPap || 0);
+                    ninDecAsig += Number(s.ninDec || 0);
+                    ninPapAsig += Number(s.ninPap || 0);
+                });
+                return { navDecAsig, navPapAsig, ninDecAsig, ninPapAsig };
+            }
+
+            renderStock() {
+                const s = this.stock;
+                const asig = this.getAsignedTotals();
+
+                document.getElementById('st-nav-dec-ped').innerText = s.navidad.decPedidos;
+                document.getElementById('st-nav-dec-asig').innerText = asig.navDecAsig;
+                const navDecDisp = s.navidad.decPedidos - asig.navDecAsig;
+                document.getElementById('st-nav-dec-disp').innerText = navDecDisp;
+                document.getElementById('st-nav-dec-disp').className = `font-bold text-sm ${navDecDisp < 0 ? 'text-rose-600' : 'text-emerald-600'}`;
+                document.getElementById('st-nav-dec-tot').innerText = this.formatCurrency((s.navidad.decPedidos * this.RULES.decTotal));
+
+                document.getElementById('st-nav-pap-ped').innerText = s.navidad.papPedidos;
+                document.getElementById('st-nav-pap-asig').innerText = asig.navPapAsig;
+                const navPapDisp = s.navidad.papPedidos - asig.navPapAsig;
+                document.getElementById('st-nav-pap-disp').innerText = navPapDisp;
+                document.getElementById('st-nav-pap-disp').className = `font-bold text-sm ${navPapDisp < 0 ? 'text-rose-600' : 'text-emerald-600'}`;
+                document.getElementById('st-nav-pap-tot').innerText = this.formatCurrency((s.navidad.papPedidos * this.RULES.papTotal));
+
+                const navidadTotalVal = (s.navidad.decPedidos * this.RULES.decTotal) + (s.navidad.papPedidos * this.RULES.papTotal);
+                document.getElementById('badge-navidad-tot').innerText = this.formatCurrency(navidadTotalVal);
+
+                document.getElementById('st-nin-dec-ped').innerText = s.nino.decPedidos;
+                document.getElementById('st-nin-dec-asig').innerText = asig.ninDecAsig;
+                const ninDecDisp = s.nino.decPedidos - asig.ninDecAsig;
+                document.getElementById('st-nin-dec-disp').innerText = ninDecDisp;
+                document.getElementById('st-nin-dec-disp').className = `font-bold text-sm ${ninDecDisp < 0 ? 'text-rose-600' : 'text-emerald-600'}`;
+                document.getElementById('st-nin-dec-tot').innerText = this.formatCurrency((s.nino.decPedidos * this.RULES.decTotal));
+
+                document.getElementById('st-nin-pap-ped').innerText = s.nino.papPedidos;
+                document.getElementById('st-nin-pap-asig').innerText = asig.ninPapAsig;
+                const ninPapDisp = s.nino.papPedidos - asig.ninPapAsig;
+                document.getElementById('st-nin-pap-disp').innerText = ninPapDisp;
+                document.getElementById('st-nin-pap-disp').className = `font-bold text-sm ${ninPapDisp < 0 ? 'text-rose-600' : 'text-emerald-600'}`;
+                document.getElementById('st-nin-pap-tot').innerText = this.formatCurrency((s.nino.papPedidos * this.RULES.papTotal));
+
+                const ninoTotalVal = (s.nino.decPedidos * this.RULES.decTotal) + (s.nino.papPedidos * this.RULES.papTotal);
+                document.getElementById('badge-nino-tot').innerText = this.formatCurrency(ninoTotalVal);
+
+                const totalVal = navidadTotalVal + ninoTotalVal;
+                const totalAdmin = (s.navidad.decPedidos * this.RULES.decVal) + (s.navidad.papPedidos * this.RULES.papVal) + (s.nino.decPedidos * this.RULES.decVal) + (s.nino.papPedidos * this.RULES.papVal);
+                const totalFardaStock = (s.navidad.decPedidos * this.RULES.decFarda) + (s.navidad.papPedidos * this.RULES.papFarda) + (s.nino.decPedidos * this.RULES.decFarda) + (s.nino.papPedidos * this.RULES.papFarda);
+
+                let totalPendienteGlobalSocios = 0;
+                this.socios.forEach(socio => {
+                    const calc = this.calcularFinanzasSocio(socio);
+                    if (calc.pendienteNavidad > 0) totalPendienteGlobalSocios += calc.pendienteNavidad;
+                    if (calc.pendienteNino > 0) totalPendienteGlobalSocios += calc.pendienteNino;
+                });
+
+                document.getElementById('stock-val-total').innerText = this.formatCurrency(totalVal);
+                document.getElementById('stock-val-admin').innerText = this.formatCurrency(totalAdmin);
+                document.getElementById('stock-val-farda').innerText = this.formatCurrency(totalFardaStock);
+                document.getElementById('stock-farda-pend').innerText = this.formatCurrency(totalPendienteGlobalSocios);
+            }
+
+            openStockModal() {
+                document.getElementById('inp-stock-nav-dec').value = this.stock.navidad.decPedidos;
+                document.getElementById('inp-stock-nav-pap').value = this.stock.navidad.papPedidos;
+                document.getElementById('inp-stock-nin-dec').value = this.stock.nino.decPedidos;
+                document.getElementById('inp-stock-nin-pap').value = this.stock.nino.papPedidos;
+                document.getElementById('modal-stock').classList.remove('hidden');
+            }
+
+            closeStockModal() { document.getElementById('modal-stock').classList.add('hidden'); }
+
+            saveStock(e) {
+                e.preventDefault();
+                this.stock.navidad.decPedidos = Number(document.getElementById('inp-stock-nav-dec').value || 0);
+                this.stock.navidad.papPedidos = Number(document.getElementById('inp-stock-nav-pap').value || 0);
+                this.stock.nino.decPedidos = Number(document.getElementById('inp-stock-nin-dec').value || 0);
+                this.stock.nino.papPedidos = Number(document.getElementById('inp-stock-nin-pap').value || 0);
+                this.saveData();
+                this.renderAll();
+                this.closeStockModal();
+                this.showMsg('Stock Actualizado', 'El stock se ha guardado correctamente.', 'success');
+            }
+
+            // --- BASE DE DATOS ---
+            isSocioPedido(dbId) {
+                return this.socios.some(s => s.dbId === dbId);
+            }
+
+            renderBaseTabla() {
+                const query = document.getElementById('search-base-input').value.toLowerCase().trim();
+                const filtered = this.baseDatos.filter(b => {
+                    return b.responsable.toLowerCase().includes(query) || b.familia.toLowerCase().includes(query);
+                });
+
+                document.getElementById('count-base').innerText = this.baseDatos.length;
+                const tbody = document.getElementById('base-table-body');
+                tbody.innerHTML = '';
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 text-xs">No hay registros en la base de datos.</td></tr>`;
+                    return;
+                }
+
+                filtered.forEach(b => {
+                    const pedidoHecho = this.isSocioPedido(b.id);
+                    const tr = document.createElement('tr');
+                    tr.className = pedidoHecho ? "bg-emerald-50/70 hover:bg-emerald-100/70 transition" : "hover:bg-slate-50 transition";
+                    
+                    const cuotaTexto = b.cuotaSiNo === 'SI' ? '<span class="px-2 py-1 bg-emerald-100 text-emerald-800 font-bold rounded">SI</span>' : '<span class="px-2 py-1 bg-amber-100 text-amber-800 font-bold rounded">NO</span>';
+                    const tipoFardaTexto = b.cuotaSiNo === 'SI' ? '<span class="text-slate-400 italic">N/A (Incluida)</span>' : `<span class="uppercase font-semibold text-indigo-900">${b.fardaTipo}</span>`;
+
+                    tr.innerHTML = `
+                        <td class="p-4 font-bold text-slate-900">${b.responsable}</td>
+                        <td class="p-4 text-slate-600">${b.familia}</td>
+                        <td class="p-4">${cuotaTexto}</td>
+                        <td class="p-4">${tipoFardaTexto}</td>
+                        <td class="p-4 text-center">
+                            ${pedidoHecho ? '<span class="px-2.5 py-1 bg-emerald-200 text-emerald-800 text-[11px] font-bold rounded-full"><i class="fa-solid fa-check"></i> Lotería Pedida</span>' : '<span class="px-2.5 py-1 bg-slate-200 text-slate-600 text-[11px] rounded-full">Pendiente</span>'}
+                        </td>
+                        <td class="p-4 text-center">
+                            <button type="button" onclick="app.openBaseModal('${b.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition" title="Editar"><i class="fa-solid fa-pen text-xs"></i></button>
+                            <button type="button" onclick="app.deleteBaseRegistro('${b.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition" title="Eliminar"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            toggleBaseFardaTipo() {
+                const val = document.getElementById('base-cuota-si-no').value;
+                const wrapper = document.getElementById('wrapper-base-farda-tipo');
+                if (val === 'SI') {
+                    wrapper.classList.add('hidden');
+                } else {
+                    wrapper.classList.remove('hidden');
+                }
+            }
+
+            openBaseModal(id = null) {
+                document.getElementById('base-id').value = id || '';
+                if (id) {
+                    const reg = this.baseDatos.find(b => b.id === id);
+                    if (reg) {
+                        document.getElementById('modal-base-title').innerHTML = '<i class="fa-solid fa-database"></i> Editar Registro BD';
+                        document.getElementById('base-responsable').value = reg.responsable;
+                        document.getElementById('base-familia').value = reg.familia;
+                        document.getElementById('base-cuota-si-no').value = reg.cuotaSiNo;
+                        document.getElementById('base-farda-tipo').value = reg.fardaTipo || 'individual';
+                    }
+                } else {
+                    document.getElementById('modal-base-title').innerHTML = '<i class="fa-solid fa-database"></i> Nuevo Registro BD';
+                    document.getElementById('base-responsable').value = '';
+                    document.getElementById('base-familia').value = '';
+                    document.getElementById('base-cuota-si-no').value = 'SI';
+                    document.getElementById('base-farda-tipo').value = 'individual';
+                }
+                this.toggleBaseFardaTipo();
+                document.getElementById('modal-base').classList.remove('hidden');
+            }
+
+            closeBaseModal() { document.getElementById('modal-base').classList.add('hidden'); }
+
+            saveBaseRegistro(e) {
+                e.preventDefault();
+                const id = document.getElementById('base-id').value;
+                const responsable = document.getElementById('base-responsable').value.trim();
+                const familia = document.getElementById('base-familia').value.trim();
+                const cuotaSiNo = document.getElementById('base-cuota-si-no').value;
+                const fardaTipo = cuotaSiNo === 'SI' ? 'incluida' : document.getElementById('base-farda-tipo').value;
+
+                if (id) {
+                    const idx = this.baseDatos.findIndex(b => b.id === id);
+                    if (idx !== -1) {
+                        this.baseDatos[idx] = { id, responsable, familia, cuotaSiNo, fardaTipo };
+                    }
+                } else {
+                    const newReg = {
+                        id: 'db_' + Date.now(),
+                        responsable, familia, cuotaSiNo, fardaTipo
+                    };
+                    this.baseDatos.push(newReg);
+                }
+
+                this.saveData();
+                this.renderAll();
+                this.closeBaseModal();
+                this.showMsg('Guardado', 'Registro guardado correctamente.', 'success');
+            }
+
+            deleteBaseRegistro(id) {
+                if (confirm('¿Deseas eliminar este registro?')) {
+                    this.baseDatos = this.baseDatos.filter(b => b.id !== id);
+                    this.saveData();
+                    this.renderAll();
+                    this.showMsg('Eliminado', 'Registro eliminado correctamente.', 'success');
+                }
+            }
+
+            // --- CÁLCULOS FINANCIEROS SOCIO ---
+            calcularFinanzasSocio(socio) {
+                const navDecs = Number(socio.navDec || 0);
+                const navPaps = Number(socio.navPap || 0);
+                const ninDecs = Number(socio.ninDec || 0);
+                const ninPaps = Number(socio.ninPap || 0);
+
+                const dineroDecimosNavidad = navDecs * this.RULES.decTotal;
+                const dineroPapeletasNavidad = navPaps * this.RULES.papTotal;
+                const dineroDecimosNino = ninDecs * this.RULES.decTotal;
+                const dineroPapeletasNino = ninPaps * this.RULES.papTotal;
+
+                const navLoteria = dineroDecimosNavidad + dineroPapeletasNavidad;
+                const ninLoteria = dineroDecimosNino + dineroPapeletasNino;
+
+                const tipoFarda = socio.fardaTipo || 'incluida';
+                const baseNavFarda = this.RULES.fardasCuotas.navidad[tipoFarda] || 0; 
+                const baseNinFarda = this.RULES.fardasCuotas.nino[tipoFarda] || 0; 
+
+                const descuentoNavFarda = (navDecs * this.RULES.decFarda) + (navPaps * this.RULES.papFarda);
+                const descuentoNinFarda = (ninDecs * this.RULES.decFarda) + (ninPaps * this.RULES.papFarda);
+
+                const fardaNavNeta = baseNavFarda - descuentoNavFarda;
+                const fardaNinNeta = baseNinFarda - descuentoNinFarda;
+
+                const navTotal = navLoteria + Math.max(0, fardaNavNeta);
+                const ninTotal = ninLoteria + Math.max(0, fardaNinNeta);
+                const totalGeneral = navTotal + ninTotal;
+
+                const entregadoNav = Number(socio.entregadoNav || 0);
+                const entregadoNin = Number(socio.entregadoNin || 0);
+                const totalEntregado = entregadoNav + entregadoNin;
+
+                const difNav = entregadoNav - navTotal;
+                const pendienteNavidad = difNav < 0 ? Math.abs(difNav) : 0;
+                const pagadoNavidadCompleto = entregadoNav >= navTotal && navTotal > 0;
+
+                const difNin = entregadoNin - ninTotal;
+                const pendienteNino = difNin < 0 ? Math.abs(difNin) : 0;
+                const pagadoNinoCompleto = entregadoNin >= ninTotal && ninTotal > 0;
+
+                return {
+                    dineroDecimosNavidad, dineroPapeletasNavidad,
+                    dineroDecimosNino, dineroPapeletasNino,
+                    navLoteria, navTotal,
+                    ninLoteria, ninTotal,
+                    totalGeneral, entregadoNav, entregadoNin, totalEntregado,
+                    pendienteNavidad, pendienteNino,
+                    pagadoNavidadCompleto, pagadoNinoCompleto,
+                    fardaNavVal: fardaNavNeta, fardaNinVal: fardaNinNeta
+                };
+            }
+
+            // --- GESTIÓN DE FICHAS DE SOCIOS ---
+            renderSocios() {
+                const query = document.getElementById('search-input').value.toLowerCase().trim();
+                const filtered = this.socios.filter(s => {
+                    const fullName = (s.nombreFicha || '').toLowerCase();
+                    const numSocio = (s.numeroSocio || '').toLowerCase();
+                    return fullName.includes(query) || numSocio.includes(query);
+                });
+
+                document.getElementById('count-socios').innerText = this.socios.length;
+                const grid = document.getElementById('socios-grid');
+                grid.innerHTML = '';
+
+                if (filtered.length === 0) {
+                    grid.innerHTML = `<div class="col-span-full py-12 text-center bg-white rounded-2xl border border-slate-200"><p class="text-slate-500 font-medium text-sm">No se encontraron fichas de pedido.</p></div>`;
+                    return;
+                }
+
+                filtered.forEach(socio => {
+                    const fin = this.calcularFinanzasSocio(socio);
+
+                    let navFardaHtml = fin.fardaNavVal > 0 ? `<span class="text-rose-600 font-bold">Farda pendiente: ${this.formatCurrency(fin.fardaNavVal)}</span>` : (fin.fardaNavVal < 0 ? `<span class="text-emerald-600 font-bold">Farda positiva (+${this.formatCurrency(Math.abs(fin.fardaNavVal))})</span>` : `<span class="text-slate-600 font-semibold">Incluida en cuota (0,00 €)</span>`);
+                    let ninFardaHtml = fin.fardaNinVal > 0 ? `<span class="text-rose-600 font-bold">Farda pendiente: ${this.formatCurrency(fin.fardaNinVal)}</span>` : (fin.fardaNinVal < 0 ? `<span class="text-emerald-600 font-bold">Farda positiva (+${this.formatCurrency(Math.abs(fin.fardaNinVal))})</span>` : `<span class="text-slate-600 font-semibold">Incluida en cuota (0,00 €)</span>`);
+
+                    let badgeGlobal = fin.pendienteNavidad > 0 && fin.pendienteNino > 0 ? `<span class="px-2.5 py-1 rounded-full font-semibold bg-rose-50 text-rose-700">Pendiente Ambos</span>` : (fin.pendienteNavidad > 0 ? `<span class="px-2.5 py-1 rounded-full font-semibold bg-amber-50 text-amber-700">Pendiente Navidad</span>` : (fin.pendienteNino > 0 ? `<span class="px-2.5 py-1 rounded-full font-semibold bg-amber-50 text-amber-700">Pendiente Niño</span>` : `<span class="px-2.5 py-1 rounded-full font-semibold bg-emerald-50 text-emerald-700">Ambos Pagados</span>`));
+
+                    const card = document.createElement('div');
+                    card.className = "bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between transition hover:shadow-md";
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-start gap-2 mb-3">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2 py-0.5 bg-indigo-900 text-amber-300 text-xs font-bold rounded-md">Nº ${socio.numeroSocio || 'S/N'}</span>
+                                        <h3 class="font-bold text-slate-900 text-base">${socio.nombreFicha}</h3>
+                                    </div>
+                                    <div class="mt-1"><span class="inline-block px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-semibold rounded-md uppercase">Farda: ${socio.fardaTipo}</span></div>
+                                </div>
+                                <div class="flex gap-1">
+                                    <button type="button" onclick="app.openSocioModal('${socio.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                                    <button type="button" onclick="app.deleteSocio('${socio.id}')" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-slate-50 rounded-lg transition" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- BLOQUE NAVIDAD CON MARCA DE AGUA PAGADO SI CORRESPONDE -->
+                            <div class="relative bg-red-50/50 p-3 rounded-xl border border-red-100 mb-2 text-xs space-y-1.5 overflow-hidden">
+                                ${fin.pagosNavidadCompleto ? `
+                                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                                        <span class="text-emerald-600/30 text-4xl font-extrabold tracking-widest rotate-[-15deg] uppercase border-4 border-emerald-600/30 px-4 py-1 rounded-xl">PAGADO</span>
+                                    </div>
+                                ` : ''}
+                                <div class="font-bold text-red-900 flex justify-between items-center text-sm">
+                                    <span><i class="fa-solid fa-gift text-red-500"></i> Navidad (${socio.navDec || 0} déc. | ${socio.navPap || 0} pap.)</span>
+                                    <span class="text-red-700 font-extrabold">Tot: ${this.formatCurrency(fin.navTotal)}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-1 text-[11px] text-slate-600 pt-1 border-t border-red-200/50">
+                                    <span>Décimos: ${this.formatCurrency(fin.dineroDecimosNavidad)}</span>
+                                    <span>Papeletas: ${this.formatCurrency(fin.dineroPapeletasNavidad)}</span>
+                                </div>
+                                <div class="text-[11px] text-indigo-900 font-semibold pt-0.5 flex justify-between items-center"><span>Suma Lotería:</span><strong>${this.formatCurrency(fin.navLoteria)}</strong></div>
+                                <div class="text-[11px] pt-1 border-t border-red-200/50 flex justify-between items-center"><span>Estado Farda:</span>${navFardaHtml}</div>
+                                <div class="text-[11px] text-slate-600 pt-0.5 flex justify-between items-center"><span>Entregado: <strong>${this.formatCurrency(fin.entregadoNav)}</strong></span><span class="${fin.pendienteNavidad > 0 ? 'text-rose-600 font-bold' : 'text-emerald-600'}">${fin.pendienteNavidad > 0 ? `Falta: ${this.formatCurrency(fin.pendienteNavidad)}` : 'Cubierto'}</span></div>
+                            </div>
+
+                            <!-- BLOQUE NIÑO -->
+                            <div class="relative bg-amber-50/50 p-3 rounded-xl border border-amber-100 mb-3 text-xs space-y-1.5 overflow-hidden">
+                                ${fin.pagosNinoCompleto ? `
+                                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                                        <span class="text-emerald-600/30 text-4xl font-extrabold tracking-widest rotate-[-15deg] uppercase border-4 border-emerald-600/30 px-4 py-1 rounded-xl">PAGADO</span>
+                                    </div>
+                                ` : ''}
+                                <div class="font-bold text-amber-900 flex justify-between items-center text-sm">
+                                    <span><i class="fa-solid fa-child text-amber-500"></i> Niño (${socio.ninDec || 0} déc. | ${socio.ninPap || 0} pap.)</span>
+                                    <span class="text-amber-700 font-extrabold">Tot: ${this.formatCurrency(fin.ninTotal)}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-1 text-[11px] text-slate-600 pt-1 border-t border-amber-200/50">
+                                    <span>Décimos: ${this.formatCurrency(fin.dineroDecimosNino)}</span>
+                                    <span>Papeletas: ${this.formatCurrency(fin.dineroPapeletasNino)}</span>
+                                </div>
+                                <div class="text-[11px] text-indigo-900 font-semibold pt-0.5 flex justify-between items-center"><span>Suma Lotería:</span><strong>${this.formatCurrency(fin.ninLoteria)}</strong></div>
+                                <div class="text-[11px] pt-1 border-t border-amber-200/50 flex justify-between items-center"><span>Estado Farda:</span>${ninFardaHtml}</div>
+                                <div class="text-[11px] text-slate-600 pt-0.5 flex justify-between items-center"><span>Entregado: <strong>${this.formatCurrency(fin.entregadoNin)}</strong></span><span class="${fin.pendienteNino > 0 ? 'text-rose-600 font-bold' : 'text-emerald-600'}">${fin.pendienteNino > 0 ? `Falta: ${this.formatCurrency(fin.pendienteNino)}` : 'Cubierto'}</span></div>
+                            </div>
+
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
+                                <div class="flex justify-between text-slate-600"><span>Total a Pagar General:</span><strong class="text-slate-900">${this.formatCurrency(fin.totalGeneral)}</strong></div>
+                                <div class="flex justify-between text-slate-600"><span>Total Entregado:</span><strong class="text-emerald-700">${this.formatCurrency(fin.totalEntregado)}</strong></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs"><span class="text-slate-400">Estado:</span>${badgeGlobal}</div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+
+            filterSocios() { this.renderSocios(); }
+
+            filtrarSugerenciasBD(query) {
+                const box = document.getElementById('sugerencias-bd-box');
+                if (!query || query.trim().length === 0) {
+                    box.classList.add('hidden');
+                    return;
+                }
+                const q = query.toLowerCase().trim();
+                const matches = this.baseDatos.filter(b => b.responsable.toLowerCase().includes(q) || b.familia.toLowerCase().includes(q));
+
+                if (matches.length === 0) {
+                    box.innerHTML = `<div class="p-2.5 text-xs text-slate-400">No se encontró en la BD. Puedes escribir el nombre libremente.</div>`;
+                    box.classList.remove('hidden');
+                    return;
+                }
+
+                box.innerHTML = '';
+                matches.forEach(m => {
+                    const item = document.createElement('div');
+                    item.className = "p-2.5 hover:bg-indigo-50 text-xs cursor-pointer border-b border-slate-100 flex justify-between items-center";
+                    let etiquetaTipo = m.cuotaSiNo === 'SI' ? 'Farda Incluida' : `Farda: ${m.fardaTipo}`;
+                    item.innerHTML = `<div><strong class="text-slate-900">${m.responsable}</strong> <span class="text-slate-500">(${m.familia})</span></div><span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-bold uppercase">${etiquetaTipo}</span>`;
+                    item.onclick = () => {
+                        document.getElementById('socio-db-id').value = m.id;
+                        document.getElementById('socio-nombre-ficha').value = m.responsable;
+                        
+                        const containerFarda = document.getElementById('container-socio-farda');
+                        if (m.cuotaSiNo === 'SI') {
+                            containerFarda.classList.add('hidden');
+                            document.getElementById('socio-tipo-farda').value = 'incluida';
+                        } else {
+                            containerFarda.classList.remove('hidden');
+                            document.getElementById('socio-tipo-farda').value = m.fardaTipo || 'individual';
+                        }
+
+                        box.classList.add('hidden');
+                        document.getElementById('socio-buscador-bd').value = '';
+                        this.calcModalSocioPreview();
+                    };
+                    box.appendChild(item);
+                });
+                box.classList.remove('hidden');
+            }
+
+            getNextSocioNumber() {
+                let maxNum = 0;
+                this.socios.forEach(s => {
+                    const n = parseInt(s.numeroSocio, 10);
+                    if (!isNaN(n) && n > maxNum) maxNum = n;
+                });
+                return String(maxNum + 1).padStart(2, '0');
+            }
+
+            openSocioModal(id = null) {
+                document.getElementById('socio-id').value = id || '';
+                document.getElementById('socio-db-id').value = '';
+                document.getElementById('socio-buscador-bd').value = '';
+                document.getElementById('sugerencias-bd-box').classList.add('hidden');
+
+                if (id) {
+                    const socio = this.socios.find(s => s.id === id);
+                    if (socio) {
+                        document.getElementById('modal-socio-title').innerHTML = '<i class="fa-solid fa-user-pen"></i> Editar Ficha de Pedido';
+                        document.getElementById('socio-db-id').value = socio.dbId || '';
+                        document.getElementById('socio-numero').value = socio.numeroSocio || '';
+                        document.getElementById('socio-nombre-ficha').value = socio.nombreFicha || '';
+                        
+                        const containerFarda = document.getElementById('container-socio-farda');
+                        if (socio.fardaTipo === 'incluida') {
+                            containerFarda.classList.add('hidden');
+                        } else {
+                            containerFarda.classList.remove('hidden');
+                            document.getElementById('socio-tipo-farda').value = socio.fardaTipo || 'individual';
+                        }
+
+                        document.getElementById('socio-nav-dec').value = socio.navDec || 0;
+                        document.getElementById('socio-nav-pap').value = socio.navPap || 0;
+                        document.getElementById('socio-nin-dec').value = socio.ninDec || 0;
+                        document.getElementById('socio-nin-pap').value = socio.ninPap || 0;
+                        document.getElementById('socio-nav-entregado').value = socio.entregadoNav || 0;
+                        document.getElementById('socio-nin-entregado').value = socio.entregadoNin || 0;
+                    }
+                } else {
+                    document.getElementById('modal-socio-title').innerHTML = '<i class="fa-solid fa-user-plus"></i> Nueva Ficha de Pedido';
+                    document.getElementById('socio-numero').value = this.getNextSocioNumber();
+                    document.getElementById('socio-nombre-ficha').value = '';
+                    document.getElementById('container-socio-farda').classList.add('hidden');
+                    document.getElementById('socio-tipo-farda').value = 'incluida';
+                    document.getElementById('socio-nav-dec').value = 0;
+                    document.getElementById('socio-nav-pap').value = 0;
+                    document.getElementById('socio-nin-dec').value = 0;
+                    document.getElementById('socio-nin-pap').value = 0;
+                    document.getElementById('socio-nav-entregado').value = 0;
+                    document.getElementById('socio-nin-entregado').value = 0;
+                }
+                this.calcModalSocioPreview();
+                document.getElementById('modal-socio').classList.remove('hidden');
+            }
+
+            closeSocioModal() { document.getElementById('modal-socio').classList.add('hidden'); }
+
+            calcModalSocioPreview() {
+                const tempSocio = {
+                    fardaTipo: document.getElementById('container-socio-farda').classList.contains('hidden') ? 'incluida' : document.getElementById('socio-tipo-farda').value,
+                    navDec: Number(document.getElementById('socio-nav-dec').value || 0),
+                    navPap: Number(document.getElementById('socio-nav-pap').value || 0),
+                    ninDec: Number(document.getElementById('socio-nin-dec').value || 0),
+                    ninPap: Number(document.getElementById('socio-nin-pap').value || 0)
+                };
+                const fin = this.calcularFinanzasSocio(tempSocio);
+                document.getElementById('modal-socio-total-nav').innerText = this.formatCurrency(fin.navTotal);
+                document.getElementById('modal-socio-total-nin').innerText = this.formatCurrency(fin.ninTotal);
+                document.getElementById('modal-socio-total-pagar').innerText = this.formatCurrency(fin.totalGeneral);
+
+                const entregadoNav = Number(document.getElementById('socio-nav-entregado').value || 0);
+                const entregadoNin = Number(document.getElementById('socio-nin-entregado').value || 0);
+                const totalEntregado = entregadoNav + entregadoNin;
+                const cambioNav = Math.max(0, entregadoNav - fin.navTotal);
+                const cambioNin = Math.max(0, entregadoNin - fin.ninTotal);
+                const cambioTotal = cambioNav + cambioNin;
+
+                const cambioEl = document.getElementById('modal-socio-cambio');
+                const cambioMsgEl = document.getElementById('modal-socio-cambio-msg');
+                if (cambioTotal > 0) {
+                    cambioEl.innerText = this.formatCurrency(cambioTotal);
+                    cambioMsgEl.innerText = `Nav: ${this.formatCurrency(cambioNav)} | Niño: ${this.formatCurrency(cambioNin)}`;
+                } else {
+                    cambioEl.innerText = "0,00 €";
+                    cambioMsgEl.innerText = "Importes cubiertos";
+                }
+            }
+
+            saveSocio(e) {
+                e.preventDefault();
+                const id = document.getElementById('socio-id').value;
+                const dbId = document.getElementById('socio-db-id').value;
+                const numeroSocio = document.getElementById('socio-numero').value.trim();
+                const nombreFicha = document.getElementById('socio-nombre-ficha').value.trim();
+                const fardaTipo = document.getElementById('container-socio-farda').classList.contains('hidden') ? 'incluida' : document.getElementById('socio-tipo-farda').value;
+                const navDec = Number(document.getElementById('socio-nav-dec').value || 0);
+                const navPap = Number(document.getElementById('socio-nav-pap').value || 0);
+                const ninDec = Number(document.getElementById('socio-nin-dec').value || 0);
+                const ninPap = Number(document.getElementById('socio-nin-pap').value || 0);
+                const entregadoNav = Number(document.getElementById('socio-nav-entregado').value || 0);
+                const entregadoNin = Number(document.getElementById('socio-nin-entregado').value || 0);
+
+                if (id) {
+                    const idx = this.socios.findIndex(s => s.id === id);
+                    if (idx !== -1) {
+                        this.socios[idx] = { id, dbId, numeroSocio, nombreFicha, fardaTipo, navDec, navPap, ninDec, ninPap, entregadoNav, entregadoNin };
+                    }
+                } else {
+                    const newSocio = {
+                        id: 'soc_' + Date.now(),
+                        dbId, numeroSocio, nombreFicha, fardaTipo, navDec, navPap, ninDec, ninPap, entregadoNav, entregadoNin
+                    };
+                    this.socios.push(newSocio);
+                }
+
+                this.saveData();
+                this.renderAll();
+                this.closeSocioModal();
+                this.showMsg('Guardado', 'Ficha de pedido guardada correctamente.', 'success');
+            }
+
+            deleteSocio(id) {
+                if (confirm('¿Deseas eliminar esta ficha?')) {
+                    this.socios = this.socios.filter(s => s.id !== id);
+                    this.saveData();
+                    this.renderAll();
+                    this.showMsg('Eliminado', 'Ficha eliminada correctamente.', 'success');
+                }
+            }
+
+            // --- TESORERÍA Y PAGOS ADMIN ---
+            openLiquidarAdminModal() {
+                document.getElementById('inp-liquidar-sorteo').value = 'navidad';
+                document.getElementById('inp-liquidar-monto').value = '';
+                document.getElementById('inp-liquidar-nota').value = '';
+                document.getElementById('modal-liquidar').classList.remove('hidden');
+            }
+
+            closeLiquidarAdminModal() { document.getElementById('modal-liquidar').classList.add('hidden'); }
+
+            saveLiquidarAdmin(e) {
+                e.preventDefault();
+                const sorteo = document.getElementById('inp-liquidar-sorteo').value;
+                const monto = Number(document.getElementById('inp-liquidar-monto').value || 0);
+                const nota = document.getElementById('inp-liquidar-nota').value.trim() || 'Pago a administración';
+                if (monto <= 0) return;
+
+                this.pagosAdmin.push({ id: 'pag_' + Date.now(), sorteo, monto, nota, fecha: new Date().toISOString().slice(0, 10) });
+                this.saveData();
+                this.renderAll();
+                this.closeLiquidarAdminModal();
+                this.showMsg('Registrado', 'Pago a administración guardado y descontado de caja.', 'success');
+            }
+
+            deletePagoAdmin(id) {
+                if (confirm('¿Eliminar este registro de pago?')) {
+                    this.pagosAdmin = this.pagosAdmin.filter(p => p.id !== id);
+                    this.saveData();
+                    this.renderAll();
+                    this.showMsg('Eliminado', 'Pago eliminado.', 'success');
+                }
+            }
+
+            renderTesoreria() {
+                let totalRecaudadoSocios = 0;
+                this.socios.forEach(s => { totalRecaudadoSocios += Number(s.entregadoNav || 0) + Number(s.entregadoNin || 0); });
+
+                let totalPagadoAdmin = 0, pagadoNav = 0, pagadoNin = 0;
+                const pagosTbody = document.getElementById('pagos-admin-table-body');
+                pagosTbody.innerHTML = '';
+
+                if (this.pagosAdmin.length === 0) {
+                    pagosTbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">No hay pagos registrados.</td></tr>`;
+                } else {
+                    this.pagosAdmin.forEach(p => {
+                        const montoPago = Number(p.monto || 0);
+                        totalPagadoAdmin += montoPago;
+                        if (p.sorteo === 'navidad') pagadoNav += montoPago;
+                        if (p.sorteo === 'nino') pagadoNin += montoPago;
+
+                        const tr = document.createElement('tr');
+                        tr.className = "hover:bg-slate-50 transition";
+                        tr.innerHTML = `
+                            <td class="p-4 font-medium text-slate-700">${p.fecha}</td>
+                            <td class="p-4 capitalize font-semibold ${p.sorteo === 'navidad' ? 'text-red-600' : 'text-amber-600'}">${p.sorteo}</td>
+                            <td class="p-4 text-slate-600">${p.nota}</td>
+                            <td class="p-4 text-right font-bold text-slate-900">${this.formatCurrency(montoPago)}</td>
+                            <td class="p-4 text-center"><button type="button" onclick="app.deletePagoAdmin('${p.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg"><i class="fa-solid fa-trash text-xs"></i></button></td>
+                        `;
+                        pagosTbody.appendChild(tr);
+                    });
+                }
+
+                const cajaActual = Math.max(0, totalRecaudadoSocios - totalPagadoAdmin);
+                document.getElementById('caja-actual-val').innerText = this.formatCurrency(cajaActual);
+                document.getElementById('caja-recaudado-tot').innerText = this.formatCurrency(totalRecaudadoSocios);
+                document.getElementById('caja-pagado-admin-tot').innerText = this.formatCurrency(totalPagadoAdmin);
+
+                const totalNavAdminDeuda = (this.stock.navidad.decPedidos * this.RULES.decVal) + (this.stock.navidad.papPedidos * this.RULES.papVal);
+                const totalNinAdminDeuda = (this.stock.nino.decPedidos * this.RULES.decVal) + (this.stock.nino.papPedidos * this.RULES.papVal);
+                document.getElementById('tes-nav-total').innerText = this.formatCurrency(totalNavAdminDeuda);
+                document.getElementById('tes-nav-pagado').innerText = this.formatCurrency(pagadoNav);
+                document.getElementById('tes-nav-pendiente').innerText = this.formatCurrency(Math.max(0, totalNavAdminDeuda - pagadoNav));
+
+                document.getElementById('tes-nin-total').innerText = this.formatCurrency(totalNinAdminDeuda);
+                document.getElementById('tes-nin-pagado').innerText = this.formatCurrency(pagadoNin);
+                document.getElementById('tes-nin-pendiente').innerText = this.formatCurrency(Math.max(0, totalNinAdminDeuda - pagadoNin));
+            }
+
+            // --- PREMIOS Y LIQUIDACIÓN ---
+            renderPremios() {
+                const premioNavDec = Number(document.getElementById('premio-nav-dec').value || 0);
+                const premioNavPap = Number(document.getElementById('premio-nav-pap').value || 0);
+                const premioNinDec = Number(document.getElementById('premio-nin-dec').value || 0);
+                const premioNinPap = Number(document.getElementById('premio-nin-pap').value || 0);
+
+                const tbody = document.getElementById('premios-table-body');
+                tbody.innerHTML = '';
+
+                if (this.socios.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs">No hay socios con pedidos.</td></tr>`;
+                    return;
+                }
+
+                const sociosOrdenados = [...this.socios].sort((a, b) => (Number(a.numeroSocio) || 0) - (Number(b.numeroSocio) || 0));
+
+                sociosOrdenados.forEach(s => {
+                    const navDecs = Number(s.navDec || 0);
+                    const navPaps = Number(s.navPap || 0);
+                    const ninDecs = Number(s.ninDec || 0);
+                    const ninPaps = Number(s.ninPap || 0);
+
+                    const premioNavDecUnitarioNeto = Math.max(0, premioNavDec - 20);
+                    const premioNavPapUnitarioNeto = Math.max(0, premioNavPap - 4);
+                    const premioNinDecUnitarioNeto = Math.max(0, premioNinDec - 20);
+                    const premioNinPapUnitarioNeto = Math.max(0, premioNinPap - 4);
+
+                    const totalPremioNavidad = (navDecs * premioNavDecUnitarioNeto) + (navPaps * premioNavPapUnitarioNeto);
+                    const totalPremioNino = (ninDecs * premioNinDecUnitarioNeto) + (ninPaps * premioNinPapUnitarioNeto);
+                    const totalDevolver = totalPremioNavidad + totalPremioNino;
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition";
+                    tr.innerHTML = `
+                        <td class="p-4 font-bold text-indigo-900">${s.numeroSocio || 'S/N'}</td>
+                        <td class="p-4 font-semibold text-slate-900">${s.nombreFicha}</td>
+                        <td class="p-4 text-right font-bold text-red-700">${this.formatCurrency(totalPremioNavidad)}</td>
+                        <td class="p-4 text-right font-bold text-amber-700">${this.formatCurrency(totalPremioNino)}</td>
+                        <td class="p-4 text-right font-extrabold text-emerald-700 text-base">${this.formatCurrency(totalDevolver)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // --- BACKUP Y EXCEL ---
+            downloadBackup() {
+                const data = { stock: this.stock, baseDatos: this.baseDatos, socios: this.socios, pagosAdmin: this.pagosAdmin, version: "4.0" };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup_loteria_${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                this.showMsg('Backup', 'Copia de seguridad descargada correctamente.', 'success');
+            }
+
+            restoreBackup(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const json = JSON.parse(event.target.result);
+                        if (json.stock && json.baseDatos && json.socios) {
+                            this.stock = json.stock;
+                            this.baseDatos = json.baseDatos;
+                            this.socios = json.socios;
+                            this.pagosAdmin = json.pagosAdmin || [];
+                            this.saveData();
+                            this.renderAll();
+                            this.showMsg('Restaurado', 'Datos restaurados correctamente.', 'success');
+                        } else {
+                            this.showMsg('Error', 'Formato de archivo inválido.', 'error');
+                        }
+                    } catch (err) { this.showMsg('Error', 'No se pudo leer el archivo JSON.', 'error'); }
+                };
+                reader.readAsText(file);
+            }
+
+            exportToExcel() {
+                let csv = '\uFEFFNº Socio,Nombre,Tipo Farda,Navidad Total (€),Niño Total (€),Entregado Navidad (€),Entregado Niño (€)\n';
+                this.socios.forEach(s => {
+                    const fin = this.calcularFinanzasSocio(s);
+                    csv += `"${s.numeroSocio || ''}","${s.nombreFicha}","${s.fardaTipo}","${fin.navTotal} €","${fin.ninTotal} €","${fin.entregadoNav} €","${fin.entregadoNin} €"\n`;
+                });
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `loteria_asociacion_${new Date().toISOString().slice(0, 10)}.csv`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                this.showMsg('Exportado', 'Archivo CSV generado correctamente.', 'success');
+            }
+
+            formatCurrency(val) {
+                return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
+            }
+        }
+
+        let app;
+        window.onload = function() { app = new LotteryApp(); };
+    </script>
+</body>
+</html>
